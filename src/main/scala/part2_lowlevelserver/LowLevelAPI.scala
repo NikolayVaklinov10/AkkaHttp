@@ -72,7 +72,9 @@ object LowLevelAPI extends App {
   }
 
   // the following is a source and sink making akka stream which runs the http
-  Http().bind("localhost", 8000).runWith(httpSyncConnectionHandler)
+//  Http().bind("localhost", 8080).runWith(httpSyncConnectionHandler)
+  // another version of the above line code
+  Http().bindAndHandleSync(requestHandler, "localhost", 8080) // shorthand version
 
 
 }
