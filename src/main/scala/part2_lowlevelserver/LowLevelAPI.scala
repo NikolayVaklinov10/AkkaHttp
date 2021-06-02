@@ -117,7 +117,10 @@ object LowLevelAPI extends App {
     connection.handleWithAsyncHandler(asyncRequestHandler)
   }
 
+//  Http().bind("localhost", 8081).runWith(httpAsyncConnectionHandler)
 
+  // the short version of this is
+  Http().bindAndHandleAsync(asyncRequestHandler, "localhost", 8081)
 
 
 
