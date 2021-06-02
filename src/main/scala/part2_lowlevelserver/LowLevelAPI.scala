@@ -3,10 +3,11 @@ package part2_lowlevelserver
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.IncomingConnection
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
@@ -74,7 +75,52 @@ object LowLevelAPI extends App {
   // the following is a source and sink making akka stream which runs the http
 //  Http().bind("localhost", 8080).runWith(httpSyncConnectionHandler)
   // another version of the above line code
-  Http().bindAndHandleSync(requestHandler, "localhost", 8080) // shorthand version
+//  Http().bindAndHandleSync(requestHandler, "localhost", 8080) // shorthand version
+
+  /*
+    Method 2: serve back HTTP response ASYNCHRONOUSLY
+   */
+  val asyncRequestHandler: HttpRequest => Future[HttpResponse] = {
+    case HttpRequest(HttpMethods.GET, Uri.Path("/home"), _, _, _) => // method, URI, headers, content, protocol (HTTP1.1/HTTP2.0)
+      Future(HttpResponse(
+        StatusCodes.OK, // HTTP 200
+        entity = HttpEntity(
+          ContentTypes.`text/html(UTF-8)`,
+          """
+            |<html>
+            |<body>
+            |Hello from Akka HTTP!
+            |</body>
+            |</html>
+            |""".stripMargin
+        )
+      ))
+
+    case request: HttpRequest =>
+      request.discardEntityBytes()
+      Future(HttpResponse(
+        StatusCodes.NotFound, // 404
+        entity = HttpEntity(
+          ContentTypes.`text/html(UTF-8)`,
+          """
+            |<html>
+            |<body>
+            |OOPS! Nasty, the result cannot be found
+            |</body>
+            |</html>
+            |""".stripMargin
+        )
+      ))
+  }
+
+  val httpAsyncConnectionHandler = Sink.foreach[IncomingConnection] {connection =>
+    connection.handleWithAsyncHandler(asyncRequestHandler)
+  }
+
+
+
+
+
 
 
 }
