@@ -41,10 +41,19 @@ trait GuitarStoreJsonProtocol extends DefaultJsonProtocol {
 }
 
 
-class LowLevelRest extends App {
+object LowLevelRest extends App with GuitarStoreJsonProtocol {
 
   implicit val system = ActorSystem("LowLevelRest")
   implicit val materializer = ActorMaterializer()
   import system.dispatcher
+
+  /*
+  GET on localhost:8080/api/guitar => ALL the guitars in the store
+  POST on localhost:8080/api/guitar => insert the guitar into the store
+   */
+
+  // JSON -> marshalling
+  val simpleGuitar = Guitar("Fender", "Startocaster")
+  println(simpleGuitar.toJson.prettyPrint)
 
 }
