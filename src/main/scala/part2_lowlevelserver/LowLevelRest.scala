@@ -1,8 +1,17 @@
 package part2_lowlevelserver
 
-import akka.actor.{Actor, ActorLogging, ActorSystem}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCode, StatusCodes, Uri}
+import akka.http.scaladsl.server.ContentNegotiator.Alternative.ContentType
 import akka.stream.ActorMaterializer
+import part2_lowlevelserver.GuitarDB.{CreateGuitar, FindAllGuitars}
 import spray.json._
+import akka.pattern.ask
+import akka.util.Timeout
+
+import scala.concurrent.duration._
+import scala.concurrent.Future
 
 case class Guitar(make: String, model: String)
 
@@ -48,12 +57,63 @@ object LowLevelRest extends App with GuitarStoreJsonProtocol {
   import system.dispatcher
 
   /*
-  GET on localhost:8080/api/guitar => ALL the guitars in the store
+  -GET on localhost:8080/api/guitar => ALL the guitars in the store
   POST on localhost:8080/api/guitar => insert the guitar into the store
    */
 
   // JSON -> marshalling
   val simpleGuitar = Guitar("Fender", "Startocaster")
   println(simpleGuitar.toJson.prettyPrint)
+
+  // unmarshalling
+  val simpleGuitarJsonString =
+    """
+      |{
+      |  "make": "Fender",
+      |  "model": "Startocaster"
+      |}
+      |""".stripMargin
+
+  println(simpleGuitarJsonString.parseJson.convertTo[Guitar])
+
+  /*
+    setup
+   */
+  val guitarDb = system.actorOf(Props[GuitarDB], "LowLevelDB")
+  val guitarList = List(
+    Guitar("Fender","Stratcaster"),
+    Guitar("Gibson","Les Paul"),
+    Guitar("Martin","LX1")
+  )
+
+  guitarList.foreach { guitar =>
+    guitarDb ! CreateGuitar(guitar)
+  }
+
+  /*
+    server code
+   */
+  implicit val defaultTimeout = Timeout(2 seconds)
+
+  val requestHandler: HttpRequest => Future[HttpResponse] = {
+    case HttpRequest(HttpMethods.GET, Uri.Path("/api/guitar"),_,_,_) =>
+      val guitarFuture:Future[List[Guitar]] = (guitarDb ? FindAllGuitars).mapTo[List[Guitar]]
+      guitarFuture.map { guitars =>
+        HttpResponse(
+          entity = HttpEntity(
+            ContentTypes.`application/json`,
+            guitars.toJson.prettyPrint
+          )
+        )
+      }
+    case request: HttpRequest =>
+      request.discardEntityBytes()
+      Future {
+        HttpResponse(status = StatusCodes.NotFound)
+      }
+  }
+
+  Http().bindAndHandleAsync(requestHandler, "localhost", 8080)
+
 
 }
