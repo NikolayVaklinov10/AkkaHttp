@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCode, StatusCodes, Uri}
 import akka.http.scaladsl.server.ContentNegotiator.Alternative.ContentType
 import akka.stream.ActorMaterializer
-import part2_lowlevelserver.GuitarDB.{CreateGuitar, FindAllGuitars}
+import part2_lowlevelserver.GuitarDB.{CreateGuitar, FindAllGuitars, GuitarCreated}
 import spray.json._
 import akka.pattern.ask
 import akka.util.Timeout
@@ -106,6 +106,23 @@ object LowLevelRest extends App with GuitarStoreJsonProtocol {
           )
         )
       }
+
+    case HttpRequest(HttpMethods.POST, Uri.Path("/api/guitar"), _, entity, _) =>
+      // entities are a Source[ByteString]
+      val strictEntityFuture = entity.toStrict(3 seconds)
+      strictEntityFuture.flatMap { strictEntity =>
+
+        val guitarJsonString = strictEntity.data.utf8String
+        val guitar = guitarJsonString.parseJson.convertTo[Guitar]
+
+        val guitarCreatedFuture: Future[GuitarCreated] = (guitarDb ? CreateGuitar(guitar)).mapTo[GuitarCreated]
+        guitarCreatedFuture.map { _ =>
+          HttpResponse(StatusCodes.OK)
+        }
+      }
+
+
+
     case request: HttpRequest =>
       request.discardEntityBytes()
       Future {
