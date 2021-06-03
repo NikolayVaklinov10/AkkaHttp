@@ -121,7 +121,7 @@ object LowLevelAPI extends App {
 //  Http().bind("localhost", 8081).runWith(httpAsyncConnectionHandler)
 
   // the short version of this is
-  Http().bindAndHandleAsync(asyncRequestHandler, "localhost", 8081)
+//  Http().bindAndHandleAsync(asyncRequestHandler, "localhost", 8081)
 
   /*
   Method 3: async via Akka streams
@@ -164,7 +164,7 @@ object LowLevelAPI extends App {
 //  }
 
   // shorthand version of the above code would be
-  Http().bindAndHandle(streamsBasedRequestHandler,"localhost", 8082)
+//  Http().bindAndHandle(streamsBasedRequestHandler,"localhost", 8082)
 
   /**
    * Exercise: create your own HTTP server running on localhost on 8388, which replies
@@ -207,6 +207,12 @@ object LowLevelAPI extends App {
         headers = List(Location("http://google.com"))
       )
 
+    case HttpRequest(HttpMethods.GET, Uri.Path("/scala"), _, _, _) =>
+      HttpResponse(
+        StatusCodes.Found,
+        headers = List(Location("https://akka.io"))
+      )
+
     case request: HttpRequest =>
       request.discardEntityBytes()
       HttpResponse(
@@ -220,10 +226,10 @@ object LowLevelAPI extends App {
 
   val bindingFuture = Http().bindAndHandleSync(syncExerciseHandler, "localhost", 8388)
 
-  // shutdown the server:
-  bindingFuture
-    .flatMap(binding => binding.unbind())
-    .onComplete(_ => system.terminate())
+//  // shutdown the server:
+//  bindingFuture
+//    .flatMap(binding => binding.unbind())
+//    .onComplete(_ => system.terminate())
 
 
 
