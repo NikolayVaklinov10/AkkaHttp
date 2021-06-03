@@ -2,6 +2,7 @@ package part2_lowlevelserver
 
 import akka.actor.{Actor, ActorLogging, ActorSystem}
 import akka.stream.ActorMaterializer
+import spray.json._
 
 case class Guitar(make: String, model: String)
 
@@ -33,7 +34,10 @@ class GuitarDB extends Actor with ActorLogging {
       currentGuitarId += 1
 
   }
-
+}
+// this trait with its extension is needed for converting the data into Json and vice versa
+trait GuitarStoreJsonProtocol extends DefaultJsonProtocol {
+  implicit val guitarFormat = jsonFormat2(Guitar)
 }
 
 
