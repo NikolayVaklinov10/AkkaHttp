@@ -21,7 +21,14 @@ object HighLevelIntro extends App {
       complete(StatusCodes.OK) // Directives
     }
 
-  Http().bindAndHandle(simpleRoute, "localhost", 8080)
+  val pathGetRoute: Route =
+    path("home") {
+      get {
+        complete(StatusCodes.OK)
+      }
+    }
+
+  Http().bindAndHandle(pathGetRoute, "localhost", 8080)
 
 
 }
