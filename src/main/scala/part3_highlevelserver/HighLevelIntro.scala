@@ -9,5 +9,9 @@ object HighLevelIntro extends App {
   implicit val system = ActorSystem("HighLevelIntro")
   implicit val materializer = ActorMaterializer()
 
+  // the Directives import for the high level akka http implicits
+  import akka.http.scaladsl.server.Directives._
+
+
 
 }
