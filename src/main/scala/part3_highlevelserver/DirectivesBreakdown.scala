@@ -46,6 +46,11 @@ object DirectivesBreakdown extends App {
       complete(StatusCodes.OK)
     }
 
+  val pathEndRoute =
+    pathEndOrSingleSlash {  // localhost:8080 OR localhost:8080/
+      complete(StatusCodes.OK)
+    }
+
 
 
 }
