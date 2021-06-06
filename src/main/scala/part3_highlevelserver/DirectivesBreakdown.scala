@@ -54,6 +54,17 @@ object DirectivesBreakdown extends App {
 
   Http().bindAndHandle(complexPathRoute, "localhost", 8080)
 
+  /**
+   * Type #2: extraction directives
+   */
+
+  // GET on /api/item/42
+  val pathExtractionRoute =
+  path("api" / "item" / IntNumber) { (itemNumber: Int) =>
+    // other directives
+    println(s"I've got a number in my path: $itemNumber")
+    complete(StatusCodes.OK)
+  }
 
 
 }
