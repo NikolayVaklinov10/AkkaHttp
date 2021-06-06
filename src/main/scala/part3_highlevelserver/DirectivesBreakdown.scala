@@ -1,6 +1,7 @@
 package part3_highlevelserver
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.stream.ActorMaterializer
 
@@ -50,6 +51,8 @@ object DirectivesBreakdown extends App {
     pathEndOrSingleSlash {  // localhost:8080 OR localhost:8080/
       complete(StatusCodes.OK)
     }
+
+  Http().bindAndHandle(complexPathRoute, "localhost", 8080)
 
 
 
