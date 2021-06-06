@@ -59,12 +59,18 @@ object DirectivesBreakdown extends App {
    */
 
   // GET on /api/item/42
-  val pathExtractionRoute =
+  val pathExtractionRoute = {
   path("api" / "item" / IntNumber) { (itemNumber: Int) =>
     // other directives
     println(s"I've got a number in my path: $itemNumber")
     complete(StatusCodes.OK)
   }
+
+    val pathMultiExtractRoute =
+      path("api" / "order" / IntNumber / IntNumber) { (id, inventory) =>
+        println(s"I've got TWO numbers in my path: $id, $inventory")
+        complete(StatusCodes.OK)
+      }
 
 
 }
