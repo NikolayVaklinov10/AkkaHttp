@@ -1,6 +1,7 @@
 package part3_highlevelserver
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.stream.ActorMaterializer
 
 object DirectivesBreakdown extends App {
@@ -8,6 +9,16 @@ object DirectivesBreakdown extends App {
   implicit val materializer = ActorMaterializer()
   import system.dispatcher
   import akka.http.scaladsl.server.Directives._
+
+  /*
+  Type #1: filtering directives
+   */
+
+  val simpleHttpMethodRoute =
+    post {  // equivalent directives for get, put, patch, delete, head, options
+      complete(StatusCodes.Forbidden)
+    }
+
 
 
 }
