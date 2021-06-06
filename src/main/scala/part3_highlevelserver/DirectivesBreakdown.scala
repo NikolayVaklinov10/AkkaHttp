@@ -40,6 +40,12 @@ object DirectivesBreakdown extends App {
       complete(StatusCodes.OK)
     }  // /api/myEndpoint
 
+  // bad practice
+  val dontConfuse =
+    path("api/myEndpoint") {
+      complete(StatusCodes.OK)
+    }
+
 
 
 }
