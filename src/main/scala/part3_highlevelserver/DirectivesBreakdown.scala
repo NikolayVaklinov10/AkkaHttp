@@ -66,10 +66,19 @@ object DirectivesBreakdown extends App {
     complete(StatusCodes.OK)
   }
 
-    val pathMultiExtractRoute =
-      path("api" / "order" / IntNumber / IntNumber) { (id, inventory) =>
-        println(s"I've got TWO numbers in my path: $id, $inventory")
-        complete(StatusCodes.OK)
+  val pathMultiExtractRoute =
+    path("api" / "order" / IntNumber / IntNumber) { (id, inventory) =>
+      println(s"I've got TWO numbers in my path: $id, $inventory")
+      complete(StatusCodes.OK)
+    }
+
+    val queryParamExtractionRoute =
+    // /api/item?id=45
+      path("api" / "item") {
+        parameter('id.as[Int]) { (itemId: Int) =>
+          println(s"I've extracted the ID as $itemId")
+          complete(StatusCodes.OK)
+        }
       }
 
 
