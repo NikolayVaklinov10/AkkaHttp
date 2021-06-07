@@ -1,6 +1,7 @@
 package part3_highlevelserver
 
 import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
@@ -10,7 +11,6 @@ import part2_lowlevelserver.{Guitar, GuitarDB, GuitarStoreJsonProtocol}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import spray.json._
 
 
@@ -100,4 +100,39 @@ object HighLevelExample extends App with GuitarStoreJsonProtocol {
           }
         }
       }
+
+  def toHttpEntity(payload: String) = HttpEntity(ContentTypes.`application/json`, payload)
+
+  val simplifiedGuitarServerRoute =
+    (pathPrefix("api" / "guitar") & get) {
+      path("inventory") {
+        parameter('inStock.as[Boolean]) { inStock =>
+          complete(
+            (guitarDb ? FindGuitarsInStock(inStock))
+              .mapTo[List[Guitar]]
+              .map(_.toJson.prettyPrint)
+              .map(toHttpEntity)
+          )
+        }
+      } ~
+        (path(IntNumber) | parameter('id.as[Int])) { guitarId =>
+          complete(
+            (guitarDb ? FindGuitar(guitarId))
+              .mapTo[Option[Guitar]]
+              .map(_.toJson.prettyPrint)
+              .map(toHttpEntity)
+          )
+        } ~
+        pathEndOrSingleSlash {
+          complete(
+            (guitarDb ? FindAllGuitars)
+              .mapTo[List[Guitar]]
+              .map(_.toJson.prettyPrint)
+              .map(toHttpEntity)
+          )
+        }
     }
+
+  Http().bindAndHandle(simplifiedGuitarServerRoute, "localhost", 8080)
+
+}
