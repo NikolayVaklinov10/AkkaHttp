@@ -1,12 +1,25 @@
 package part3_highlevelserver
 
 import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
+import akka.pattern.ask
+import akka.http.scaladsl.server.Directives._
 import part2_lowlevelserver.{Guitar, GuitarDB, GuitarStoreJsonProtocol}
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import spray.json._
+
+
+
 
 object HighLevelExample extends App with GuitarStoreJsonProtocol {
   implicit val system = ActorSystem("HighLevelExample")
   implicit val materializer = ActorMaterializer()
+
   import system.dispatcher
 
   import GuitarDB._
@@ -21,6 +34,7 @@ object HighLevelExample extends App with GuitarStoreJsonProtocol {
   /*
     setup
    */
+  implicit val timeout = Timeout(2 seconds)
   val guitarDb = system.actorOf(Props[GuitarDB], "LowLevelGuitarDB")
   val guitarList = List(
     Guitar("Fender", "Stratocaster"),
@@ -32,8 +46,58 @@ object HighLevelExample extends App with GuitarStoreJsonProtocol {
     guitarDb ! CreateGuitar(guitar)
   }
 
+  val guitarServerRoute =
+    path("api" / "guitar") {
+      // ALWAYS PUT THE MORE SPECIFIC ROUTE FIRST
+      parameter('id.as[Int]) { guitarId =>
+        get {
+          val guitarFuture: Future[Option[Guitar]] = (guitarDb ? FindGuitar(guitarId)).mapTo[Option[Guitar]]
+          val entityFuture = guitarFuture.map { guitarOption =>
+            HttpEntity(
+              ContentTypes.`application/json`,
+              guitarOption.toJson.prettyPrint
+            )
+          }
+          complete(entityFuture)
+        }
+      } ~
+        get {
+          val guitarsFuture: Future[List[Guitar]] = (guitarDb ? FindAllGuitars).mapTo[List[Guitar]]
+          val entityFuture = guitarsFuture.map { guitars =>
+            HttpEntity(
+              ContentTypes.`application/json`,
+              guitars.toJson.prettyPrint
+            )
+          }
 
+          complete(entityFuture)
+        }
+    } ~
+      path("api" / "guitar" / IntNumber) { guitarId =>
+        get {
+          val guitarFuture: Future[Option[Guitar]] = (guitarDb ? FindGuitar(guitarId)).mapTo[Option[Guitar]]
+          val entityFuture = guitarFuture.map { guitarOption =>
+            HttpEntity(
+              ContentTypes.`application/json`,
+              guitarOption.toJson.prettyPrint
+            )
+          }
+          complete(entityFuture)
+        }
+      } ~
+      path("api" / "guitar" / "inventory") {
+        get {
+          parameter('inStock.as[Boolean]) { inStock =>
+            val guitarFuture: Future[List[Guitar]] = (guitarDb ? FindGuitarsInStock(inStock)).mapTo[List[Guitar]]
+            val entityFuture = guitarFuture.map { guitars =>
+              HttpEntity(
+                ContentTypes.`application/json`,
+                guitars.toJson.prettyPrint
+              )
+            }
+            complete(entityFuture)
 
-
-
-}
+          }
+        }
+      }
+    }
